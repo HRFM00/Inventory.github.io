@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>商品登録</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./polyfills/promise.min.js"></script>
+  <script src="./polyfills/fetch.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.2.0/crypto-js.min.js"></script>
+</head>
+<body>
+  <div id="app">
+    <div id="header"><h1>商品登録</h1></div>
+    
+    <div id="loginPanel" class="section" style="margin:12px;">
+      <h2>ログイン</h2>
+      <div class="row">
+        <label for="loginUsername">ユーザー名</label>
+        <input id="loginUsername" type="text" autocomplete="username" style="padding:8px;">
+      </div>
+      <div class="row">
+        <label for="loginPassword">パスワード</label>
+        <input id="loginPassword" type="password" autocomplete="current-password" style="padding:8px;">
+      </div>
+      <div class="row">
+        <button id="loginBtn" class="primary">ログイン</button>
+        <span id="loginMsg" class="muted"></span>
+      </div>
+      <div class="row">
+        <button id="toggleAuthConfig" class="tab">認証DB設定を表示/隠す</button>
+      </div>
+      <div id="authConfigPanel" class="section" style="display:none; margin-top:8px;">
+        <div class="row">
+          <label for="authSupabaseUrl">Supabase URL(認証用)</label>
+          <input id="authSupabaseUrl" type="text" placeholder="https://xxxxx.supabase.co" style="width:340px;padding:8px;">
+        </div>
+        <div class="row">
+          <label for="authSupabaseKey">Anon APIキー(認証用)</label>
+          <input id="authSupabaseKey" type="text" placeholder="eyJhbGciOi..." style="width:340px;padding:8px;">
+        </div>
+        <div class="row">
+          <button id="saveAuthConfig" class="primary">保存</button>
+          <span class="muted">保存後、再ログインしてください</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="content" style="display:none;">
+      <div id="userBar" class="section" style="display:none; margin:12px; padding:8px;">
+        <span id="userWelcome" class="muted"></span>
+        <button id="logoutBtn" class="tab" style="margin-left:8px;">ログアウト</button>
+      </div>
+
+      <div class="tabs">
+        <button id="tabRegister" class="tab active">商品登録</button>
+        <button id="tabBrowse" class="tab">在庫検索</button>
+        <button id="tabUpdate" class="tab">在庫更新</button>
+      </div>
+      
+
+      <div id="view-register">
+      <div class="section">
+        <h2>登録</h2>
+        <div class="row">
+          <label for="janInput">JAN</label>
+          <input id="janInput" type="text" inputmode="none" pattern="[0-9]*" autocomplete="off" readonly>
+        </div>
+        <div class="row">
+          <div class="label">カテゴリー</div>
+          <div id="categoryButtons" class="btns"></div>
+        </div>
+        <div class="row">
+          <div class="label">個数</div>
+          <div id="quantityButtons" class="btns"></div>
+          <input id="quantityInput" type="number" min="1" step="1" value="1" class="qty">
+          <button id="addToQueue" class="primary">一時保存に追加</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>一時保存リスト</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>JAN</th><th>カテゴリー</th><th>個数</th><th>操作</th></tr></thead>
+            <tbody id="queueTbody"></tbody>
+          </table>
+        </div>
+        <div class="row">
+          <button id="sendQueue" class="danger">サーバーに送信</button>
+          <span id="sendProgress" class="muted"></span>
+        </div>
+        <div id="sendingSection" class="section" style="display:none; margin-top:10px;">
+          <h3>送信中</h3>
+          <div class="row" style="align-items:center; gap:8px;">
+            <div id="sendingProgressBarWrap" style="flex:1; height:10px; background:#eee; border-radius:4px; overflow:hidden;">
+              <div id="sendingProgressBar" style="height:100%; width:0%; background:#4caf50;"></div>
+            </div>
+            <span id="sendingProgressText" class="muted">0%</span>
+            <button id="resumeSending" style="display:none;">再開</button>
+          </div>
+          <div class="table-wrap" style="margin-top:8px; max-height:220px; overflow:auto;">
+            <table>
+              <thead><tr><th>JAN</th><th>カテゴリー</th><th>個数</th><th>状態</th></tr></thead>
+              <tbody id="sendingTbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      </div>
+
+      <div id="view-browse" style="display:none;">
+      <div class="section">
+        <h2>在庫検索 / CSV出力</h2>
+        <div class="row">
+          <input id="searchInput" type="text" placeholder="検索(JAN/商品名/カテゴリー)" style="width:260px;padding:8px;">
+          <select id="sortCreated" style="padding:8px;">
+            <option value="none">指定なし</option>
+            <option value="desc" selected>作成日時(新しい順)</option>
+            <option value="asc">作成日時(古い順)</option>
+          </select>
+          <select id="sortCategory" style="padding:8px;">
+            <option value="none" selected>指定なし</option>
+            <!-- カテゴリー候補はJSで動的に注入 -->
+          </select>
+          <select id="sortQuantity" style="padding:8px;">
+            <option value="none" selected>指定なし</option>
+            <option value="desc">個数(多い順)</option>
+            <option value="asc">個数(少ない順)</option>
+          </select>
+          <button id="applyFilter" class="primary" style="margin-left:8px;">検索</button>
+          <button id="exportAllCsv" class="btns">全件CSV出力</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead id="browseThead"></thead>
+            <tbody id="browseTbody"></tbody>
+          </table>
+        </div>
+        <div class="row" style="text-align:center;">
+          <button id="prevPage">前へ</button>
+          <span id="pageInfo" class="muted"></span>
+          <button id="nextPage">次へ</button>
+        </div>
+      </div>
+      </div>
+
+      <div id="view-update" style="display:none;">
+      <div class="section">
+        <h2>在庫更新（本日の在庫変動CSV取り込み）</h2>
+        <div class="row">
+          <span class="muted">最終更新: </span>
+          <span id="lastUpdateAt" class="muted">--</span>
+        </div>
+        <div class="row">
+          <input id="updateCsvFile" type="file" accept=".csv">
+          <select id="updateEncoding" style="padding:8px;">
+            <option value="utf-8">UTF-8</option>
+            <option value="shift_jis" selected>Shift_JIS</option>
+          </select>
+          <button id="parseUpdateCsv" class="primary">読み込み/解析</button>
+          <span id="updateInfo" class="muted"></span>
+        </div>
+        <div class="row">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>JAN</th><th>売れた数</th><th>現在在庫</th><th>反映後在庫</th></tr>
+              </thead>
+              <tbody id="updateTbody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="row">
+          <button id="sendUpdate" class="danger" disabled>サーバーに送信</button>
+          <span id="sendUpdateProgress" class="muted"></span>
+        </div>
+      </div>
+      </div>
+    </div>
+
+    <div id="overlay" style="display:none;">
+      <div id="overlayBox">
+        <div id="overlayText">処理中...</div>
+        <div id="overlayProgress">0%</div>
+      </div>
+    </div>
+
+    <div id="logArea"></div>
+  </div>
+
+  <script src="./user-auth-utils.js"></script>
+  <script src="./js/app.js"></script>
+  <script src="./js/register.js"></script>
+  <script src="./js/browse.js"></script>
+  <script src="./js/update.js"></script>
+</body>
+<noscript>このアプリを利用するにはJavaScriptを有効にしてください。</noscript>
+</html>
+
+

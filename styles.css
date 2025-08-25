@@ -1,0 +1,54 @@
+body{font-family:Arial,Meiryo,sans-serif;font-size:14px;margin:0;background:#fafafa;color:#222}
+#header{background:#1e88e5;color:#fff;padding:10px 12px}
+#header h1{margin:0;font-size:18px}
+.tabs{background:#fff;border-bottom:1px solid #ddd;padding:6px 12px}
+.tab{display:inline-block;margin-right:8px;padding:8px 12px;border:1px solid #bbb;background:#f5f5f5;border-radius:4px}
+.tab.active{background:#1e88e5;color:#fff;border-color:#1565c0}
+.section{background:#fff;border:1px solid #ddd;border-radius:4px;margin:12px;padding:10px}
+.row{margin:8px 0}
+label{display:inline-block;min-width:120px}
+input[type=text],input[type=number]{padding:8px}
+.btns button{display:inline-block;margin:4px;padding:10px 12px;border:1px solid #bbb;background:#f5f5f5;border-radius:4px}
+.btns button.selected{background:#1e88e5;color:#fff;border-color:#1565c0}
+.primary{background:#1e88e5;color:#fff;border:none;padding:10px 14px;border-radius:4px}
+.danger{background:#e53935;color:#fff;border:none;padding:10px 14px;border-radius:4px}
+.qty{width:90px;margin-left:8px}
+.muted{color:#666;font-size:12px;margin-left:8px}
+.table-wrap{overflow-x:auto;background:#fff;border:1px solid #ddd;border-radius:4px}
+table{border-collapse:collapse;width:100%;min-width:480px}
+th,td{border:1px solid #ddd;padding:8px;font-size:13px}
+th{background:#f0f0f0}
+#overlay{position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:9999}
+#overlayBox{position:absolute;left:50%;top:40%;width:240px;margin-left:-120px;background:#fff;border-radius:6px;padding:16px;text-align:center}
+#logArea{margin:10px 12px;font-size:12px}
+
+#categoryButtons.btns{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-column-gap:10px;grid-row-gap:8px}
+#categoryButtons.btns button{width:100%;margin:0}
+#quantityButtons.btns{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));grid-column-gap:10px;grid-row-gap:8px}
+#quantityButtons.btns button{width:100%;margin:0}
+
+@media (max-width:600px){
+  .section{margin:8px;padding:8px}
+  .row{margin:6px 0}
+  label{min-width:90px}
+  th,td{padding:6px}
+  #queueTbody button{min-width:64px;height:36px;padding:8px 10px}
+}
+
+/* spacing between quantity buttons and add button */
+#addToQueue{margin-left:12px;margin-top:8px}
+
+/* Match search and CSV button heights */
+#applyFilter{padding:10px 14px}
+#exportAllCsv{padding:10px 14px}
+
+/* When wrapping on small screens, add vertical gap between search input and button */
+@media (max-width:600px){
+  #applyFilter{margin-top:6px}
+}
+
+/* Ensure wrapping row in browse view has consistent gaps when items wrap */
+#view-browse .section .row:first-of-type{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px}
+
+/* Narrow the gap between JAN label and input */
+label[for="janInput"]{min-width:60px}
